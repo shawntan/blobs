@@ -47,17 +47,36 @@ typedef struct my_node {
 } ll_node;
 
 void screen_clr(FILE* out) {
-	fprintf(out, "\x1b[2J");
+	fprintf(out, "\x1b[2J\n");
 }
 
 void line_clr(FILE* out) {
-	fprintf(out, "\x1b[1A\x1b[2K");
+	fprintf(out, "\x1b[1A\x1b[2K\n");
 }
-
+/*
 void blob_pr(blob_t blob, FILE* out) {
 	switch (blob) {
 		case BLOB_R:
-			fwprintf(out, L"\x1b[0;35m \x00002308\x1b[0;36m(^.^)\x1b[0;35m\x0000230B \n");
+			fprintf(out, "(^.^) \n");
+			break;
+		case BLOB_RO:
+			fprintf(out, " (^.^)\n");
+			break;
+		case BLOB_L:
+			fprintf(out, "(^.^) \n");
+			break;
+		case BLOB_LO:
+			fprintf(out, " (^.^)\n");
+			break;
+		default:
+			break;
+	}
+}
+*/
+void blob_pr(blob_t blob, FILE* out) {
+	switch (blob) {
+		case BLOB_R:
+			fprintf(out,"%ls", L"\x1b[0;35m \x00002308\x1b[0;36m(^.^)\x1b[0;35m\x0000230B \n");
 			break;
 		case BLOB_RO:
 			fwprintf(out, L"\x1b[0;35m\x00002308\x0000203E\x1b[0;36m(^.^)\x1b[0;35m_\x0000230B\n");
@@ -71,10 +90,9 @@ void blob_pr(blob_t blob, FILE* out) {
 		default:
 			break;
 	}
+	fflush(stdout);
 }
-
 int main (int argc, char** argv) {
-	
 	pid_t whoami;
 	blob_t blob = BLOB_R;
 	int count = 0, ii, jj, cmode=0, ttycnt=0;
@@ -90,10 +108,9 @@ int main (int argc, char** argv) {
 	assert(dev);
 	
 	while ((ent = readdir(dev)) != NULL) {
-		if (!strncmp(ent->d_name, "ttys0", 5)) {
-			if (ent->d_name[5] >= (char)0x30 && ent->d_name[5] <= (char)0x39) {
+		if (!strncmp(ent->d_name, "tty", 3)) {
+			if (ent->d_name[3] >= '0' && ent->d_name[3]<= '9') {
 				strncpy(cur->fname, ent->d_name, 254);
-				printf("%s\n", cur->fname);
 				cur->next = malloc(sizeof(ll_node));
 				cur = cur->next;
 				++ttycnt;
@@ -109,7 +126,7 @@ int main (int argc, char** argv) {
 		return 0;
 	}
 #endif
-	
+	setbuf(stdout,NULL);
 	cur = head;
 	loc = malloc(sizeof(char) * 128);
 	strcpy(loc, "/dev/");
@@ -123,15 +140,16 @@ int main (int argc, char** argv) {
 		cur = cur->next;
 	}
 	
-	setlocale(LC_CTYPE, "en_us.UTF-8");
+	//setlocale(LC_ALL, "");
 	
 	while (1) {
 		for (jj = 0; jj < ttycnt; ++jj) {
 			for (ii = 0; ii < count; ++ii) {
-				fprintf(files[jj], " ");
+				fprintf(files[jj], " \n");
 			}
 			blob_pr(blob, files[jj]);
 		}
+		printf("tick\n");
 		usleep(400000);
 		if (blob % 2) {
 			--blob;
